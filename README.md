@@ -1,14 +1,4 @@
-# Planar Instability and Reconfiguration of Overcurved Rings
-
-## Reference code
-
-This repository contains the MATLAB implementation used to compute the finite-amplitude equilibrium response of overcurved elastic rings.
-
-The code evaluates the realized overcurving ratio as a function of the prescribed overcurving ratio and resolves the bending, torsional, and axial energy contributions together with the converged arc-length fields.
-
-The implementation accompanies the manuscript
-
-> J. Yook and J. Y. Lee, *Planar instability and reconfiguration of overcurved rings.*
+# Planar instability and reconfiguration of overcurved rings
 
 ## Files
 
@@ -237,8 +227,12 @@ These files can be used to check the output of a local installation against prev
 
 ## Citation
 
-Citation metadata are provided in `CITATION.cff`.
+If you use this code, please cite:
+
+> Jihoon Yook and Jae Young Lee, “Planar instability and reconfiguration of overcurved rings,”
+> *Submitted*
 
 ## License
 
-MIT License. See `LICENSE`.
+MIT License — see [LICENSE](LICENSE).
+ 
