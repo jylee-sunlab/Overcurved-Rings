@@ -70,18 +70,18 @@ The principal output is the realized overcurving ratio `O_geom`, stored as `Oeq`
 
 All dimensional quantities use SI units.
 
-| Field | Meaning | Unit |
-| --- | --- | --- |
-| `m` | lobe-pair count. The present implementation requires `m = 2` | - |
-| `E` | Young's modulus | Pa |
-| `nu` | Poisson's ratio | - |
-| `I1` | second moment of area of the bending channel carrying the preset curvature | m^4 |
-| `I2` | second moment of area of the second bending channel | m^4 |
-| `J` | Saint-Venant torsional constant | m^4 |
-| `A` | cross-sectional area | m^2 |
-| `kp` | preset curvature `kappa_p` | 1/m |
-| `Ns0` | spatial grid points per representative lobe. Must be odd | - |
-| `nDivTheta0` | number of scan intervals over `O_p` | - |
+| Field | Meaning |
+| --- | --- |
+| `m` | lobe-pair count. The present implementation requires `m = 2` |
+| `E` | Young's modulus |
+| `nu` | Poisson's ratio |
+| `I1` | second moment of area of the bending channel carrying the preset curvature |
+| `I2` | second moment of area of the second bending channel |
+| `J` | Saint-Venant torsional constant |
+| `A` | cross-sectional area |
+| `kp` | preset curvature `kappa_p` |
+| `Ns0` | spatial grid points per representative lobe. Must be odd |
+| `nDivTheta0` | number of scan intervals over `O_p` |
 
 The default numerical settings in `overcurved_energy_scan.m` may be overridden through additional fields of `p`.
 
