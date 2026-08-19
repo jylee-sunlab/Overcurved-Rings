@@ -1,0 +1,244 @@
+# Planar Instability and Reconfiguration of Overcurved Rings
+
+## Reference code
+
+This repository contains the MATLAB implementation used to compute the finite-amplitude equilibrium response of overcurved elastic rings.
+
+The code evaluates the realized overcurving ratio as a function of the prescribed overcurving ratio and resolves the bending, torsional, and axial energy contributions together with the converged arc-length fields.
+
+The implementation accompanies the manuscript
+
+> J. Yook and J. Y. Lee, *Planar instability and reconfiguration of overcurved rings.*
+
+## Files
+
+- `run_overcurved_ring.m` — main script. Edit the input block and run the complete analysis.
+- `overcurved_energy_scan.m` — performs the nonlinear equilibrium scan over the prescribed overcurving ratio.
+- `save_scan_results.m` — writes the scan results and optional field data to CSV or XLSX files.
+- `plot_scan_results.m` — plots the realized overcurving ratio and energy partition.
+- `plot_shapes.m` — reconstructs and saves three-dimensional ring shapes and the progression panel.
+- `reference/` — reference CSV outputs for supplied benchmark cases.
+- `CITATION.cff` — citation metadata.
+- `LICENSE` — MIT license.
+
+## Usage
+
+The simplest workflow is to edit the input section of `run_overcurved_ring.m` and execute the script.
+
+```matlab
+run_overcurved_ring
+```
+
+A representative input is
+
+```matlab
+p = struct();
+
+p.m  = 2;
+p.E  = 2e9;
+p.nu = 0.41;
+
+p.I1 = 1.600000e-11;
+p.I2 = 9.000000e-12;
+p.J  = 1.948939e-11;
+p.A  = 1.200000e-05;
+
+p.kp = 16;
+
+p.Ns0        = 201;
+p.nDivTheta0 = 100;
+```
+
+The main solver can also be called directly.
+
+```matlab
+res = overcurved_energy_scan(p);
+
+save_scan_results( ...
+    res, ...
+    'rect_4x3_kp16', ...
+    'Folder', 'results');
+
+plot_scan_results(res);
+```
+
+To reconstruct representative three-dimensional configurations from the computed branch,
+
+```matlab
+Og = res.table.Oeq( ...
+    res.table.Oeq > 1 + 1e-4 & ...
+    res.table.Oeq < 2.996);
+
+pick = unique(round( ...
+    linspace(1, numel(Og), min(10, numel(Og)))));
+
+plot_shapes( ...
+    'Ogeom', Og(pick), ...
+    'OutDir', 'results/shapes');
+```
+
+`plot_shapes` saves an individual `.png` and `.fig` file for each selected state.
+The individual state figures are closed after saving, while the final progression figure remains open.
+
+## Model
+
+The prescribed overcurving ratio is
+
+```text
+O_p = m * theta_0 / pi
+```
+
+where `theta_0 = kappa_p * L0` is the intrinsic angular span of one undeformed lobe.
+
+For the present implementation, `m = 2`, so
+
+```text
+1 <= O_p <= 3
+```
+
+The equilibrium ring is obtained by minimizing the elastic energy over the global variables `omega` and `ell` and the arc-length fields `theta_m(s0)` and `q_map(s0)`.
+
+The coded total-ring energy is equivalent to
+
+```text
+U = m * integral_0^L0 [
+      E*I1*(kappa_m1 - kappa_p)^2
+    + E*I2*kappa_m2^2
+    + G*J*tau_m^2
+    + E*A*eps_0^2
+] ds0
+```
+
+with
+
+```text
+G = E / (2*(1 + nu)).
+```
+
+Here
+
+- `kappa_m1` and `kappa_m2` are the material bending curvatures.
+- `tau_m` is the mechanical torsion.
+- `eps_0` is the axial strain.
+- `theta_m(s0)` is the material-frame rotation.
+- `q_map(s0)` generates the monotone material mapping `t(s0)`.
+- `ell` is the geometric scale factor.
+- `omega` is the lobe angular span.
+
+The principal output is the realized overcurving ratio `O_geom`, stored as `Oeq` in the result table.
+
+## Input parameters
+
+All dimensional quantities use SI units.
+
+| Field | Meaning | Unit |
+| --- | --- | --- |
+| `m` | lobe-pair count. The present implementation requires `m = 2` | - |
+| `E` | Young's modulus | Pa |
+| `nu` | Poisson's ratio | - |
+| `I1` | second moment of area of the bending channel carrying the preset curvature | m^4 |
+| `I2` | second moment of area of the second bending channel | m^4 |
+| `J` | Saint-Venant torsional constant | m^4 |
+| `A` | cross-sectional area | m^2 |
+| `kp` | preset curvature `kappa_p` | 1/m |
+| `Ns0` | spatial grid points per representative lobe. Must be odd | - |
+| `nDivTheta0` | number of scan intervals over `O_p` | - |
+
+The default numerical settings in `overcurved_energy_scan.m` may be overridden through additional fields of `p`.
+
+## Output
+
+`overcurved_energy_scan` returns a structure `res`.
+
+### `res.table`
+
+One row is stored for each prescribed overcurving ratio.
+
+| Column | Meaning |
+| --- | --- |
+| `Op` | prescribed overcurving ratio |
+| `theta0` | undeformed lobe angular span |
+| `L0` | undeformed lobe length |
+| `omega` | equilibrium lobe angular span |
+| `phi` | geometric angle of the lobe construction |
+| `ell` | equilibrium scale factor |
+| `Oeq` | realized overcurving ratio `O_geom` |
+| `Ub` | bending energy |
+| `Ut` | torsional energy |
+| `Ua` | axial energy |
+| `Utotal` | total ring energy |
+| `exitflag` | `fmincon` convergence flag |
+
+### `res.fields`
+
+The converged arc-length fields are stored for every scan point.
+
+- `s0`
+- `theta_m`
+- `t`
+- `dt_ds0`
+- `lambda`
+- `q`
+
+The result structure also contains solver diagnostics in `res.diag`, validated parameters and derived rigidities in `res.p`, and run metadata in `res.meta`.
+
+## Ring shapes
+
+`plot_shapes` reconstructs the closed three-dimensional centerline associated with a prescribed realized ratio `O_geom`.
+
+Each ring is assembled from symmetry-related constant-curvature lobe segments.
+The shape construction is restricted to `m = 2`.
+
+The endpoints
+
+```text
+O_geom = 1
+O_geom = 3
+```
+
+are singular in the closed-form shape parameterization.
+The default shape range therefore stops short of both endpoints.
+
+The reconstruction also reports a closure residual.
+For a valid shape this residual should remain near numerical round-off.
+
+## Requirements
+
+- MATLAB R2018b or newer.
+- MATLAB Optimization Toolbox.
+- `fmincon` is used for the equilibrium minimization.
+- `fsolve` is used by `plot_shapes`.
+- GNU Octave is not supported.
+
+No external meshing or third-party numerical package is required.
+
+## Numerical notes
+
+The scan uses warm continuation from the preceding prescribed overcurving ratio.
+This continuation is important near the transition because the energy landscape can contain competing local minima.
+
+The solver periodically probes the opposite energy basin and retains the lower-energy solution.
+The corresponding settings can be controlled through `nProbeEvery` and `dwellAfterB`.
+
+For quantitative calculations, `Ns0 = 201` or finer is recommended.
+Grid refinement should be performed when the departure location or local field values are used quantitatively.
+
+For non-circular cross-sections, use the Saint-Venant torsional constant `J` rather than the polar second moment.
+
+## Reference data
+
+The `reference/` folder contains numerical outputs for supplied benchmark cases.
+
+- `rect_4x3_kp16_Ns101_summary.csv`
+- `rect_4x3_kp16_Ns101_parameters.csv`
+- `ellipse_12x3_kp16_Ns201_summary.csv`
+
+These files can be used to check the output of a local installation against previously generated results.
+
+## Citation
+
+Citation metadata are provided in `CITATION.cff`.
+
+## License
+
+MIT License. See `LICENSE`.

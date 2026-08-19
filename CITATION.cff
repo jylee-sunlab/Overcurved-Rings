@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Planar instability and reconfiguration of overcurved rings"
+authors:
+  - family-names: "Yook"
+    given-names: "Jihoon"
+    orcid: "https://orcid.org/0009-0007-3951-9570"
+authors:
+  - family-names: "Lee"
+    given-names: "Jae Young"
+    orcid: "https://orcid.org/0000-0002-6438-2699"
+license: "MIT"
