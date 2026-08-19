@@ -11,13 +11,13 @@ function res = overcurved_energy_scan(p, varargin)
 %
 %       P.m     lobe-pair count.  Must be 2.
 %       P.E     Young's modulus                                      [Pa]
-%       P.nu    Poisson's ratio                                      [-]
+%       P.nu    Poisson's ratio                                      [1]
 %       P.I1    second moment of the strong bending channel          [m^4]
 %               (the channel that carries the preset curvature)
 %       P.I2    second moment of the weak bending channel            [m^4]
 %       P.J     Saint-Venant torsional constant                      [m^4]
 %       P.A     cross-sectional area                                 [m^2]
-%       P.kp    preset (natural) curvature, kappa_p = 1/R_0          [1/m]
+%       P.kp    intrinsic curvature,                                 [1/m]
 %
 %   Optional fields
 %

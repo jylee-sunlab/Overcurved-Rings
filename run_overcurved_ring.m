@@ -9,8 +9,8 @@ p = struct();
 p.m  = 2;                % lobe-pair count.  Only m = 2 is supported.
 
 % --- Material ------------------------------------------------------------
-p.E  = 2e9;              % Young's modulus                          [Pa]
-p.nu = 0.41;             % Poisson's ratio                           [-]
+p.E  = 2e9;              % Young's modulus [Pa]
+p.nu = 0.41;             % Poisson's ratio [1]
 
 % --- Cross-section -------------------------------------------------------
 % Supply the four section constants in SI units.
@@ -28,7 +28,7 @@ p.J  = 1.948939e-11;     % [m^4]
 p.A  = 1.200000e-05;     % [m^2]
 
 % --- Preset curvature ----------------------------------------------------
-p.kp = 16;               % kappa_p = 1/R_0                          [1/m]
+p.kp = 16;               % intrinsic curvature [1/m]
 
 % --- Scan and grid resolution -------------------------------------------
 p.Ns0        = 201;      % grid points per lobe.  MUST BE ODD.
@@ -56,8 +56,10 @@ plot_scan_results(res);
 %% ===== 5) SHAPES (optional) ==============================================
 if drawShapes
     Og = res.table.Oeq(res.table.Oeq > 1 + 1e-4 & res.table.Oeq < 2.996);
-    pick = unique(round(linspace(1, numel(Og), min(10, numel(Og)))));
-    plot_shapes('Ogeom', Og(pick), ...
-                'OutDir', fullfile(outputFolder, 'shapes'));
+    if ~isempty(Og)
+        pick = unique(round(linspace(1, numel(Og), min(10, numel(Og)))));
+        plot_shapes('Ogeom', Og(pick), ...
+                    'OutDir', fullfile(outputFolder, 'shapes'));
+    end
 end
 

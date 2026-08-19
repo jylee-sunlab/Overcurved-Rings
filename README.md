@@ -143,7 +143,7 @@ For a valid shape this residual should remain near numerical round-off.
 
 ## Requirements
 
-- Developed and tested with MATLAB R2018b.
+- Developed and tested with MATLAB R2025b.
 - MATLAB Optimization Toolbox is used.
 - `fmincon` is used for the equilibrium minimization.
 - `fsolve` is used by `plot_shapes`.
