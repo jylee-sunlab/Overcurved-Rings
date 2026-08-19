@@ -19,57 +19,6 @@ The simplest workflow is to edit the input section of `run_overcurved_ring.m` an
 run_overcurved_ring
 ```
 
-A representative input is
-
-```matlab
-p = struct();
-
-p.m  = 2;
-p.E  = 2e9;
-p.nu = 0.41;
-
-p.I1 = 1.600000e-11;
-p.I2 = 9.000000e-12;
-p.J  = 1.948939e-11;
-p.A  = 1.200000e-05;
-
-p.kp = 16;
-
-p.Ns0        = 201;
-p.nDivTheta0 = 100;
-```
-
-The main solver can also be called directly.
-
-```matlab
-res = overcurved_energy_scan(p);
-
-save_scan_results( ...
-    res, ...
-    'rect_4x3_kp16', ...
-    'Folder', 'results');
-
-plot_scan_results(res);
-```
-
-To reconstruct representative three-dimensional configurations from the computed branch,
-
-```matlab
-Og = res.table.Oeq( ...
-    res.table.Oeq > 1 + 1e-4 & ...
-    res.table.Oeq < 2.996);
-
-pick = unique(round( ...
-    linspace(1, numel(Og), min(10, numel(Og)))));
-
-plot_shapes( ...
-    'Ogeom', Og(pick), ...
-    'OutDir', 'results/shapes');
-```
-
-`plot_shapes` saves an individual `.png` and `.fig` file for each selected state.
-The individual state figures are closed after saving, while the final progression figure remains open.
-
 ## Model
 
 The prescribed overcurving ratio is
@@ -194,26 +143,20 @@ For a valid shape this residual should remain near numerical round-off.
 
 ## Requirements
 
-- MATLAB R2018b or newer.
-- MATLAB Optimization Toolbox.
+- Developed and tested with MATLAB R2018b.
+- MATLAB Optimization Toolbox is used.
 - `fmincon` is used for the equilibrium minimization.
 - `fsolve` is used by `plot_shapes`.
-- GNU Octave is not supported.
 
-No external meshing or third-party numerical package is required.
 
 ## Numerical notes
 
-The scan uses warm continuation from the preceding prescribed overcurving ratio.
-This continuation is important near the transition because the energy landscape can contain competing local minima.
-
 The solver periodically probes the opposite energy basin and retains the lower-energy solution.
-The corresponding settings can be controlled through `nProbeEvery` and `dwellAfterB`.
 
 For quantitative calculations, `Ns0 = 201` or finer is recommended.
-Grid refinement should be performed when the departure location or local field values are used quantitatively.
 
 For non-circular cross-sections, use the Saint-Venant torsional constant `J` rather than the polar second moment.
+
 
 ## Reference data
 
@@ -224,6 +167,7 @@ The `reference/` folder contains numerical outputs for supplied benchmark cases.
 - `ellipse_12x3_kp16_Ns201_summary.csv`
 
 These files can be used to check the output of a local installation against previously generated results.
+
 
 ## Citation
 
