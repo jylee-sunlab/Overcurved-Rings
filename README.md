@@ -165,6 +165,7 @@ The `reference/` folder contains numerical outputs for supplied benchmark cases.
 - `rect_4x3_kp16_Ns101_summary.csv`
 - `rect_4x3_kp16_Ns101_parameters.csv`
 - `ellipse_12x3_kp16_Ns201_summary.csv`
+- `ellipse_12x3_kp16_Ns201_parameters.csv`
 
 These files can be used to check the output of a local installation against previously generated results.
 
