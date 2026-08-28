@@ -1,20 +1,18 @@
 function res = overcurved_energy_scan(p, varargin)
-%   RES = OVERCURVED_ENERGY_SCAN(P) minimizes the elastic energy of an
-%   overcurved ring over a sweep of prescribed overcurving ratios
 
     CODE_VERSION = '1.0.0';
 
     opts = parse_options(varargin{:});
     p    = validate_and_default(p);
 
-    %% ---------------------------------------------------------------- grid
+    %% grid
     theta0_min  = pi / p.m;
     theta0_max  = 2*pi - pi / p.m;
     theta0_list = linspace(theta0_min, theta0_max, p.nDivTheta0 + 1).';
     nPts        = numel(theta0_list);
     Op_list     = p.m * theta0_list / pi;
 
-    %% ------------------------------------------------------------ storage
+    %% storage
     nan_col = nan(nPts, 1);
 
     L0_c     = nan_col;   omega_c = nan_col;   phi_c    = nan_col;
@@ -58,7 +56,7 @@ function res = overcurved_energy_scan(p, varargin)
 
     tStart = tic;
 
-    %% --------------------------------------------------------------- scan
+    %% scan
     for i = 1:nPts
 
         theta0 = theta0_list(i);
@@ -87,7 +85,6 @@ function res = overcurved_energy_scan(p, varargin)
         objF = @(x) objective_grad(x, s0, idxThetaFree, p, cache, lb, ub);
         nlcF = @(x) nonlinear_constraints(x, s0, ds0, idxThetaFree, p);
 
-        % ---- Start A: warm continuation from the previous scan point -----
         if isempty(prevSolA)
             omega0_A = clampd(theta0, p.omega_min + 1e-6, p.omega_max - 1e-6);
             ell0_A   = 1 / p.kp;
@@ -111,14 +108,9 @@ function res = overcurved_energy_scan(p, varargin)
             xA = x0_A;  fvalA = inf;  exitA = -99;  outputA = struct();
         end
 
-        % ---- Decide whether to probe the opposite basin ------------------
         runB = (i == 1) || (mod(i, p.nProbeEvery) == 0) || (dwellRemaining > 0);
 
         if runB
-            % The energy landscape of an m = 2 ring has two wells in omega,
-            % near pi/2 (planar-like) and 3*pi/2 (coiled).  Start B is placed
-            % in the well that Start A is NOT in, so that both branches are
-            % tracked through the bistable region.
             if isempty(prevSolA)
                 omega_warm = theta0;
             else
@@ -169,7 +161,6 @@ function res = overcurved_energy_scan(p, varargin)
             xB = [];  fvalB = NaN;  exitB = NaN;  outputB = struct();
         end
 
-        % ---- Pick the lower of the two ----------------------------------
         validA = isfinite(fvalA) && fvalA < 1e29;
         validB = runB && isfinite(fvalB) && fvalB < 1e29;
 
@@ -193,16 +184,14 @@ function res = overcurved_energy_scan(p, varargin)
             dwellRemaining = max(0, dwellRemaining - 1);
         end
 
-        % ---- Reconstruct the winning state ------------------------------
         [omega, ell, theta, qfull] = unpack_design(xopt, p.Ns0, idxThetaFree);
         [t, dt_ds0, ~]             = build_t_from_qmap(omega, qfull, s0);
 
         phi          = phi_from_omega(omega, p.m);
-        [Utot, comp] = energy_core(theta, t, dt_ds0, omega, s0, p, ell, cache);
+        [Utot, comp] = energy_core(theta, t, dt_ds0, omega, p, ell, cache);
 
         Oeq = (2*p.m/pi) * tan(phi) * sin(0.5*omega*cos(phi));
 
-        % ---- Store -------------------------------------------------------
         L0_c(i)     = L0;
         omega_c(i)  = omega;
         phi_c(i)    = phi;
@@ -245,7 +234,6 @@ function res = overcurved_energy_scan(p, varargin)
             prevSolB.qfull = qfB;
         end
 
-        % ---- Progress ----------------------------------------------------
         if opts.Verbose && (mod(i, opts.PrintEvery) == 0 || i == 1 || i == nPts)
             if winner == 1
                 who = 'A';
@@ -259,7 +247,7 @@ function res = overcurved_energy_scan(p, varargin)
 
     elapsed = toc(tStart);
 
-    %% ------------------------------------------------------------- output
+    %% output
     res.table = table(Op_list, theta0_list, L0_c, omega_c, phi_c, ell_c, ...
                       Oeq_c, Ub_c, Ut_c, Ua_c, Utot_c, exitfl_c, ...
         'VariableNames', {'Op','theta0','L0','omega','phi','ell', ...
@@ -315,7 +303,6 @@ end
 
 
 function p = validate_and_default(p)
-% Check the physical inputs and fill in the numerical defaults.
 
     if ~isstruct(p) || ~isscalar(p)
         error('overcurved:badInput', 'P must be a scalar struct.');
@@ -336,7 +323,6 @@ function p = validate_and_default(p)
         end
     end
 
-    % --- scope ----------------------------------------------------------
     if p.m ~= 2
         error('overcurved:unsupportedM', ...
              ['Only m = 2 is supported (got m = %g).  For m >= 3 the ' ...
@@ -345,7 +331,6 @@ function p = validate_and_default(p)
               'are specific to m = 2.'], p.m);
     end
 
-    % --- positivity -----------------------------------------------------
     positive = {'E','I1','I2','J','A','kp'};
     for k = 1:numel(positive)
         if p.(positive{k}) <= 0
@@ -360,10 +345,6 @@ function p = validate_and_default(p)
               'P.nu must lie in (-1, 0.5) (got %g).', p.nu);
     end
 
-    % --- convention check -----------------------------------------------
-    % I1 is the channel that carries the preset curvature kappa_p.  The paper
-    % takes it to be the strong axis, so I1 >= I2.  The solver does not
-    % require it, hence a warning rather than an error.
     if p.I2 > p.I1
         warning('overcurved:weakAxisFirst', ...
                ['P.I2 (%g) exceeds P.I1 (%g).  I1 is the channel carrying ' ...
@@ -372,7 +353,6 @@ function p = validate_and_default(p)
                 p.I2, p.I1);
     end
 
-    % --- numerical defaults ---------------------------------------------
     p = default_field(p, 'Ns0',            201);
     p = default_field(p, 'nDivTheta0',     100);
     p = default_field(p, 'absReg',         1e-10);
@@ -404,7 +384,6 @@ function p = validate_and_default(p)
                 'warm continuation from Op = 1.'], p.Ns0);
     end
 
-    % --- derived ---------------------------------------------------------
     p.G         = p.E / (2*(1 + p.nu));
     p.EI1       = p.E * p.I1;
     p.EI2       = p.E * p.I2;
@@ -423,8 +402,6 @@ end
 
 
 function opt = make_fmincon_options()
-% Solver settings used for the published runs.  Do not change casually: the
-% reference results in reference/ were produced with exactly these.
 
     opt = optimoptions('fmincon', ...
         'Algorithm',                  'sqp', ...
@@ -441,11 +418,6 @@ end
 
 %% ========================================================================
 %  Design-vector packing
-%
-%  x = [ omega ; log(ell) ; theta_m(interior) ; q(left half incl. midpoint) ]
-%
-%  theta_m vanishes at both lobe ends, and q is mirrored about the midpoint,
-%  so only the left half is carried as an unknown.
 %% ========================================================================
 function x = pack_design(omega, ell, theta, qLeft, idxThetaFree)
     x = [omega; log(ell); theta(idxThetaFree); qLeft(:)];
@@ -487,7 +459,6 @@ end
 %  Kinematics
 %% ========================================================================
 function [t, dt_ds0, H] = build_t_from_qmap(omega, qfull, s0)
-% Map generator q -> monotone arc-length map H -> torsion coordinate t.
 
     Ns0 = numel(s0);
     ic  = (Ns0 + 1) / 2;
@@ -527,7 +498,6 @@ end
 
 
 function phi = phi_from_omega(omega, m)
-% Half-angle of the lobe cone, from the junction angle omega.
 
     val = sin(pi/(2*m)) ./ sin(omega/2);
     val = min(max(val, -1), 1);
@@ -538,7 +508,6 @@ end
 
 
 function cache = make_qmap_cache(s0, ds0)
-% Central-difference operator (one-sided at the ends) and trapezoidal weights.
 
     n = numel(s0);
     e = ones(n, 1);
@@ -580,16 +549,7 @@ end
 %% ========================================================================
 %  Energy
 %% ========================================================================
-function [Utot, comp] = energy_core(theta, t, dt_ds0, omega, s0, p, ell, cache)
-% Total ring energy and its components for one design point.
-%
-%   U = m * INT [ E*I1*(q1-kp)^2 + E*I2*q2^2 + G*J*q3^2 + E*A*eps0^2 ] ds0
-%
-% q1, q2, q3 are the material angular strains, per unit undeformed arc
-% length.  The current-arc-length curvatures kappa_m1, kappa_m2 and torsion
-% tau_m are still returned in COMP, because stress recovery needs them.
-%
-% Infeasible states return a large penalty so that fmincon backs off.
+function [Utot, comp] = energy_core(theta, t, dt_ds0, omega, p, ell, cache)
 
     phi = phi_from_omega(omega, p.m);
 
@@ -628,13 +588,6 @@ function [Utot, comp] = energy_core(theta, t, dt_ds0, omega, s0, p, ell, cache)
     lambda = ell .* h;
     eps0   = lambda - 1;
 
-    % Material angular strains, per unit undeformed arc length:
-    %   q1 = lambda*kappa_m1 =  (ell*h)*cos(theta)/ell =  h*cos(theta)
-    %   q2 = lambda*kappa_m2 = -(ell*h)*sin(theta)/ell = -h*sin(theta)
-    %   q3 = lambda*tau_m    =  (ell*h)*tau_g + dtheta
-    % The scale factor cancels, so it is not multiplied in and divided back
-    % out.  Writing the cancelled form keeps dUb/dell and dUt/dell exactly
-    % zero in floating point, which the analytic gradient below relies on.
     q1 =  h .* cos(theta);
     q2 = -h .* sin(theta);
     q3 = (p.tauSign .* h) .* tan(t .* cos(phi)) + dtheta;
@@ -703,13 +656,11 @@ end
 %  Objective, gradient, constraints
 %% ========================================================================
 function [U, grad] = objective_grad(x, s0, idxThetaFree, p, cache, lb, ub)
-% Energy and its gradient.  The theta and log(ell) blocks are analytic; the
-% omega and q blocks use finite differences.
 
     [omega, ell, theta, qfull] = unpack_design(x, numel(s0), idxThetaFree);
     [t, dt_ds0, ~]             = build_t_from_qmap(omega, qfull, s0);
 
-    [U, comp] = energy_core(theta, t, dt_ds0, omega, s0, p, ell, cache);
+    [U, comp] = energy_core(theta, t, dt_ds0, omega, p, ell, cache);
 
     if nargout < 2
         return;
@@ -733,17 +684,11 @@ function [U, grad] = objective_grad(x, s0, idxThetaFree, p, cache, lb, ub)
     q1 = comp.q1;
     q2 = comp.q2;
 
-    % --- d/d theta ------------------------------------------------------
-    % q1 = h*cos(theta) and q2 = -h*sin(theta), so dq1/dtheta = -h*sin(theta)
-    % and dq2/dtheta = -h*cos(theta).  The 1/ell of the current-measure form
-    % is replaced by h.
     db_dtheta = 2*p.I1 .* (q1 - p.kp) .* (-hh .* sin(theta)) ...
               + 2*p.I2 .* (q2)        .* (-hh .* cos(theta));
 
     dUb_dtheta = p.m * p.E * (w .* db_dtheta);
 
-    % q3 carries dtheta/ds0 undivided, so dq3_i/dtheta_j is just D_ij and the
-    % 1./(ell*h) factor of the current-measure form drops out.
     coeff_t = 2 * p.m * p.G * p.J * (w .* comp.q3);
 
     dUt_dtheta = D.' * coeff_t;
@@ -752,9 +697,6 @@ function [U, grad] = objective_grad(x, s0, idxThetaFree, p, cache, lb, ub)
 
     grad(3 : 2+nThetaFree) = g_theta_full(idxThetaFree);
 
-    % --- d/d log(ell) ---------------------------------------------------
-    % q1, q2, q3 do not contain ell, so bending and torsion are flat in it
-    % and the scale factor is set by the axial term alone.
     dUb_dell = 0;
     dUt_dell = 0;
     dUa_dell = 2 * p.m * p.E * p.A * sum(w .* comp.eps0 .* comp.h);
@@ -763,7 +705,6 @@ function [U, grad] = objective_grad(x, s0, idxThetaFree, p, cache, lb, ub)
 
     grad(2) = ell * dU_dell;
 
-    % --- d/d omega and d/dq (finite differences) ------------------------
     valueOnly = @(xx) objective_value(xx, s0, idxThetaFree, p, cache);
 
     grad(1) = fd_component(x, 1, lb, ub, valueOnly, p.fdRelStepOmega);
@@ -779,12 +720,11 @@ function U = objective_value(x, s0, idxThetaFree, p, cache)
     [omega, ell, theta, qfull] = unpack_design(x, numel(s0), idxThetaFree);
     [t, dt_ds0, ~]             = build_t_from_qmap(omega, qfull, s0);
 
-    [U, ~] = energy_core(theta, t, dt_ds0, omega, s0, p, ell, cache);
+    [U, ~] = energy_core(theta, t, dt_ds0, omega, p, ell, cache);
 end
 
 
 function g = fd_component(x, idx, lb, ub, fun, relStep)
-% Central difference where the bounds allow it, one-sided otherwise.
 
     xj = x(idx);
     h  = relStep * max(1, abs(xj));
@@ -820,8 +760,6 @@ end
 
 
 function [c, ceq] = nonlinear_constraints(x, s0, ds0, idxThetaFree, p)
-% ceq : zero slope of theta_m at the lobe midpoint (symmetry).
-% c   : keep t*cos(phi) away from the tan() singularity at pi/2.
 
     [omega, ~, theta, qfull] = unpack_design(x, numel(s0), idxThetaFree);
     [t, ~, ~]                = build_t_from_qmap(omega, qfull, s0);
@@ -838,7 +776,7 @@ end
 
 
 %% ========================================================================
-%  Small helpers
+%  Helpers
 %% ========================================================================
 function y = clampd(x, lo, hi)
     y = min(max(x, lo), hi);
@@ -856,8 +794,6 @@ end
 
 
 function str = departure_string(Op, Oeq)
-% First scan point at which Oeq leaves the planar branch, for the log line.
-% The 1e-4 tolerance is the planarity criterion used throughout the paper.
 
     idx = find(Oeq > 1 + 1e-4, 1, 'first');
 

@@ -19,7 +19,7 @@ p.nu = 0.41;             % Poisson's ratio [1]
 %   J  : Saint-Venant torsional constant
 %   A  : cross-sectional area
 %
-% Example: a solid rectangle, 4 mm by 3 mm:
+% Example: a solid rectangle, 4 mm by 3 mm (Case 6 in the paper):
 %   I1 = 3e-3*(4e-3)^3/12,   I2 = 4e-3*(3e-3)^3/12,   A = 4e-3*3e-3,
 %   J  = exact Saint-Venant torsional constant.
 p.I1 = 1.600000e-11;     % [m^4]
@@ -32,7 +32,7 @@ p.kp = 16;               % intrinsic curvature [1/m]
 
 % --- Scan and grid resolution -------------------------------------------
 p.Ns0        = 201;      % grid points per lobe.  MUST BE ODD.
-p.nDivTheta0 = 100;      % scan intervals. O_p spans [1, 2m-1] in nDivTheta0+1 points
+p.nDivTheta0 = 200;      % scan intervals. O_p spans [1, 2m-1] in nDivTheta0+1 points
 
 % --- Output --------------------------------------------------------------
 outputBaseName = 'rect_4x3_kp16';   % ASCII, no spaces; used for the CSV names
@@ -47,10 +47,15 @@ res = overcurved_energy_scan(p);
 
 %% ===== 3) SAVE ===========================================================
 save_scan_results(res, outputBaseName, 'Folder', outputFolder, 'SaveFields', saveFields);
+matFile = fullfile(outputFolder, [outputBaseName '_results.mat']);
+save(matFile, 'res');
 
 
 %% ===== 4) PLOT ===========================================================
-plot_scan_results(res);
+fig = plot_scan_results(res);
+plotBase = fullfile(outputFolder, [outputBaseName '_scan']);
+savefig(fig, [plotBase '.fig']);
+exportgraphics(fig, [plotBase '.png'], 'BackgroundColor', 'white');
 
 
 %% ===== 5) SHAPES (optional) ==============================================
