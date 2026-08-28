@@ -1,4 +1,4 @@
-# Planar instability and reconfiguration of overcurved rings
+# Rigidity scaling and supercriticality in overcurved rings
 
 ## Files
 
@@ -173,7 +173,7 @@ These files can be used to check the output of a local installation against prev
 
 If you use this code, please cite:
 
-> Jihoon Yook and Jae Young Lee, “Planar instability and reconfiguration of overcurved rings,”
+> Jihoon Yook and Jae Young Lee, “Rigidity scaling and supercriticality in overcurved rings,”
 > *Submitted*
 
 ## License
