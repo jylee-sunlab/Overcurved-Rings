@@ -174,7 +174,7 @@ These files can be used to check the output of a local installation against prev
 
 If you use this code, please cite:
 
-> Jihoon Yook and Jae Young Lee, “Rigidity scaling and supercriticality in overcurved rings,”
+> J. Yook and J. Y. Lee, “Rigidity scaling and supercriticality in overcurved rings,”
 > *Submitted*
 
 ## License
